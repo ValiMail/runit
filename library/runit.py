@@ -98,11 +98,13 @@ options:
   action:
     required: false
     default: null
-    choices: [ "restart", "reload" ]
+    choices: [ "restart", "reload", "1", "2" ]
     description:
       - if the service is up and enabled causes the given action to take place:
         * restart will stop the servie and the start it
         * reload will send the HUP signal to cause a config reload
+        * 1 will send the USR1 signal to cause a config reload
+        * 2 will send the USR2 signal to cause a config reload
 '''
 
 EXAMPLES = '''
@@ -252,7 +254,7 @@ def main():
             enabled = dict(type='bool'),
             timeout = dict(required=False, default=7),
             env_vars = dict(required=False, default=None),
-            action = dict(required=False, choices=['restart','reload'], default=None),
+            action = dict(required=False, choices=['restart','reload','1','2'], default=None),
             auto = dict(required=False, default='yes', type='bool'),
             command = dict(required=False, default=None),
             command_setup = dict(required=False, default=list(), type='list'),
@@ -441,8 +443,8 @@ exec chpst -e /etc/sv/%s/env -u %s %s
                     changed = True
                     restarted=True
 
-        elif action == 'reload' and (state == 'up' or state == 'once' or state == 'start'):
-                rc, message, st = run_command(module, 'reload', name, timeout)
+        elif (action == 'reload' or action == '1' or action == '2') and (state == 'up' or state == 'once' or state == 'start'):
+                rc, message, st = run_command(module, action, name, timeout)
                 if rc != 0:
                     module.fail_json(rc=rc, error=message, status=st)
                 else:
